@@ -51,8 +51,7 @@
         class Test {
             constructor() {
                 // this.testResults = document.getElementsByClassName('test-results');
-
-                 // Needed to add [0] to the end of the getElementsByClassName to work
+                // Needed to add [0] to the end of the getElementsByClassName to work
                 this.testResults = document.getElementsByClassName('test-results')[0];
                 this.weatherContainer = document.getElementsByClassName('weather-container')[0];
             }
@@ -61,11 +60,17 @@
                 console.log(new Date().toISOString(), '[Test]', 'Running the test');
 
                 // TODO: Make the API call and handle the results
+
+                // In creating the call I thought it would be good to create some environment values to hold things.
+                // Of course these mostly would be held in an .env file in a production situation. But here
+                // is good form as well
                 const API_URL       = 'https://api.openweathermap.org/data/2.5/weather';
                 const API_KEY       = 'c75f89dee2df592ecb5f3386294f4add';
                 const LOCATION_CODE = '4608408';  // Brentwood Represent!
                 const FULL_API_URL  = `${API_URL}?id=${LOCATION_CODE}&appid=${API_KEY}`;
 
+                // We can use async/await here for the axios call.  We could have used Promise built-ins with
+                // multiple .then to render everything but held with sending response data to the setResults/setError functions
                 try {
                     const response = await axios.get(FULL_API_URL);
                     this.setResults(response);
@@ -78,6 +83,7 @@
             setError(message) {
                 // TODO: Format the error
                 this.testResults.innerHTML = (message || '').toString();
+                this.weatherContainer.style.display = "block";  
             }
 
             setResults(message) {
@@ -104,7 +110,8 @@
                 // Handle wind speed and direction conversions from m/s
                 let windSpeedMPH = windSpeedK * 2.2369363;
                 let windDirection = this.degreesToCardinalDirection(windDeg);
-
+                
+                // Construction of weather icon list to match weather description
                 const icons = {
                     '01d': 'wi-day-sunny',
                     '02d': 'wi-day-cloudy',
@@ -126,31 +133,7 @@
                     '50n': 'wi-night-fog',
                 };
 
-                // Let's use string interpolation here to inject the DOM. I thought instead 
-                // of just iterating over and making an output of data it woudl be cool to make a
-                // human readable weather report visually.
-                //const weatherDisplay = `
-                //    <h1 class="city">${cityName}, ${countryName}</h1><br>
-                //    <p>the current weather is:</p>
-                //    <div class="tempf">${temperatureF.toFixed(1)}ºF</div>
-                //    <div class="tempc">${temperatureC.toFixed(1)}ºC</div>
-                //    <div class="humid">${humidity}% humidity</div>
-                //    <div class="wind">wind ${windSpeedMPH.toFixed(1)}mph (${windSpeedKPH.toFixed(1)}kph / \
-                //    ${windSpeedKNS.toFixed(1)}kn) from the ${windDirection}. \
-                //    Conditions: ${message.data.weather[0].description}</div>`.replace(/\s+/g, " ");
-               
-
-                    //const weatherDisplay = `<h1 class="location">${cityName}, ${countryName}</h1>
-                    //<div class="weather__summary">
-                    //    <p><i class="wi ${icons[data.weather[0].icon]} weather-icon"></i> <span class="weather__celsius-value">${temperatureF.toFixed(1)}ºF (${temperatureC.toFixed(1)}ºC)</span></p>
-                    //    <p>${message.data.weather[0].description}</p>
-                    //    <ul class="weather__miscellaneous">
-                    //    <li><i class="wi wi-humidity"></i> Humidity  <span>${humidity}%</span></li>
-                    //    <li><i class="wi wi-small-craft-advisory"></i> Wind Speed <span>${windSpeedMPH.toFixed(1)}mph from the ${windDirection}</span></li>
-                    //    </ul>
-                    //</div>
-                    //`;
-
+                    // Let's use string interpolation to maniuplate our DOM to provide markup for innerHTML
                     const weatherDisplay = `<h1 class="location">${cityName}, ${countryName}</h1>
                     <div class="weather-summary">
                         <p><i class="wi ${icons[message.data.weather[0].icon]} weather-icon"></i> <span class="weather-value">${temperatureF.toFixed(1)}ºF (${temperatureC.toFixed(1)}ºC)</span></p>
@@ -298,15 +281,11 @@
             font-size: 3rem;
             margin-right: 1.4rem;
         }
-
-
     </style>
 
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 <body>
-    <!--<div class="test-results"></div>-->
-
     <div class="button-container"></div>
 
      <!-- Brentwood weather container -->
