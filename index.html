@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>FreightWise Programming Test</title>
+    <link rel="stylesheet" href="css/weather-icons.min.css">
+
+    <script>
+        'use strict';
+
+        /**
+         * Software Developer coding exercise.
+         *
+         * Doing research and making API calls are an important part of what we do at FreightWise.  This test will
+         * demonstrate your abilities to:
+         *
+         * - Make an API call
+         * - Research an API
+         * - Do basic DOM manipulation
+         * - Parse data
+         * - Handle errors
+         * - Be creative
+         *
+         * Feel free to ask any questions you may have.  Use a lot of comments, and explain why you are doing things.
+         * Don't spend more than 1-2 hours on it - we aren't expecting a finished product.  Feel free to use any third
+         * party libraries, and if you do so, explain why you used them instead of built in browser APIs.
+         *
+         * Instructions:
+         * - Use the axios (https://github.com/axios/axios) request library to make an API call to the OpenWeatherMap
+         *   API for Current Weather Data using this API key:  c75f89dee2df592ecb5f3386294f4add
+         *   We've already imported this library to get you started.
+         * - Use either async/await or Promises.
+         * - Get the weather for Brentwood, TN, and write it to the DOM using the `setResults` method below.  Be
+         *   creative and make it look nice.
+         * - Handle errors and use the `setError` method below to display the error.  Also make it look nice.
+         * - If you find any mistakes in the test, fix them, and leave a comment about what you fixed and why.
+         * - Make sure your code is readable and maintainable.
+         * - Use plenty of descriptive comments.
+         * - Make sure your code runs in the latest version of Google Chrome and Firefox (ES6 is allowed).
+         * - Zip up your finished test and send it to dev-team-jobs@freightwisellc.com.
+         *
+         * Bonus (pick one, not required, but they give you a chance to show off if you finish quickly):
+         * - Host your solution on a GitHub page and send us the URL.
+         * - Sign up for NewsAPI.org and get the Top Headlines and show them along with the weather.
+         * - Use the browser location API to get the user's current location, and show that location's weather.
+         * - Show a satellite map of the weather in Brentwood.
+         * - Add a reusable dev console logger that shows ISO 8601 DateTime, class name, and all arguments passed in.
+         */
+        class Test {
+            constructor() {
+                // this.testResults = document.getElementsByClassName('test-results');
+
+                 // Needed to add [0] to the end of the getElementsByClassName to work
+                this.testResults = document.getElementsByClassName('test-results')[0];
+                this.weatherContainer = document.getElementsByClassName('weather-container')[0];
+            }
+
+            async run() {
+                console.log(new Date().toISOString(), '[Test]', 'Running the test');
+
+                // TODO: Make the API call and handle the results
+                const API_URL       = 'https://api.openweathermap.org/data/2.5/weather';
+                const API_KEY       = 'c75f89dee2df592ecb5f3386294f4add';
+                const LOCATION_CODE = '4608408';  // Brentwood Represent!
+                const FULL_API_URL  = `${API_URL}?id=${LOCATION_CODE}&appid=${API_KEY}`;
+
+                try {
+                    const response = await axios.get(FULL_API_URL);
+                    this.setResults(response);
+                    
+                } catch (error) {
+                    this.setError(error);
+                }
+            }
+
+            setError(message) {
+                // TODO: Format the error
+                this.testResults.innerHTML = (message || '').toString();
+            }
+
+            setResults(message) {
+
+                // This is unlike most API requests in that we are not retrieving multiple records or a collection
+                // of related records. We are getting a JSON API return that is the descriptive weather for a region
+                // Instead of a .map() or a forEach() to iterate, we get our field values needed and do the necessary
+                // converstions to inject into HTML
+
+                console.log(message);
+
+                // Assign vars to response data to do necessary conversions and ready to display
+                let temperatureK = message.data.main.temp;
+                let humidity = message.data.main.humidity;
+                let windSpeedK = message.data.wind.speed;
+                let windDeg = message.data.wind.deg;
+                let cityName = message.data.name;
+                let countryName = message.data.sys.country;
+
+                // Handle temperature conversion from Kelvins
+                let temperatureF = (temperatureK * 9) / 5 - 459.67;
+                let temperatureC = temperatureK - 273.15;
+
+                // Handle wind speed and direction conversions from m/s
+                let windSpeedMPH = windSpeedK * 2.2369363;
+                let windDirection = this.degreesToCardinalDirection(windDeg);
+
+                const icons = {
+                    '01d': 'wi-day-sunny',
+                    '02d': 'wi-day-cloudy',
+                    '03d': 'wi-cloud',
+                    '04d': 'wi-cloudy',
+                    '09d': 'wi-showers',
+                    '10d': 'wi-rain',
+                    '11d': 'wi-thunderstorm',
+                    '13d': 'wi-snow',
+                    '50d': 'wi-fog',
+                    '01n': 'wi-night-clear',
+                    '02n': 'wi-night-alt-cloudy',
+                    '03n': 'wi-cloud',
+                    '04n': 'wi-night-cloudy',
+                    '09n': 'wi-night-showers',
+                    '10n': 'wi-night-rain',
+                    '11n': 'wi-night-thunderstorm',
+                    '13n': 'wi-night-alt-snow',
+                    '50n': 'wi-night-fog',
+                };
+
+                // Let's use string interpolation here to inject the DOM. I thought instead 
+                // of just iterating over and making an output of data it woudl be cool to make a
+                // human readable weather report visually.
+                //const weatherDisplay = `
+                //    <h1 class="city">${cityName}, ${countryName}</h1><br>
+                //    <p>the current weather is:</p>
+                //    <div class="tempf">${temperatureF.toFixed(1)}ºF</div>
+                //    <div class="tempc">${temperatureC.toFixed(1)}ºC</div>
+                //    <div class="humid">${humidity}% humidity</div>
+                //    <div class="wind">wind ${windSpeedMPH.toFixed(1)}mph (${windSpeedKPH.toFixed(1)}kph / \
+                //    ${windSpeedKNS.toFixed(1)}kn) from the ${windDirection}. \
+                //    Conditions: ${message.data.weather[0].description}</div>`.replace(/\s+/g, " ");
+               
+
+                    //const weatherDisplay = `<h1 class="location">${cityName}, ${countryName}</h1>
+                    //<div class="weather__summary">
+                    //    <p><i class="wi ${icons[data.weather[0].icon]} weather-icon"></i> <span class="weather__celsius-value">${temperatureF.toFixed(1)}ºF (${temperatureC.toFixed(1)}ºC)</span></p>
+                    //    <p>${message.data.weather[0].description}</p>
+                    //    <ul class="weather__miscellaneous">
+                    //    <li><i class="wi wi-humidity"></i> Humidity  <span>${humidity}%</span></li>
+                    //    <li><i class="wi wi-small-craft-advisory"></i> Wind Speed <span>${windSpeedMPH.toFixed(1)}mph from the ${windDirection}</span></li>
+                    //    </ul>
+                    //</div>
+                    //`;
+
+                    const weatherDisplay = `<h1 class="location">${cityName}, ${countryName}</h1>
+                    <div class="weather-summary">
+                        <p><i class="wi ${icons[message.data.weather[0].icon]} weather-icon"></i> <span class="weather-value">${temperatureF.toFixed(1)}ºF (${temperatureC.toFixed(1)}ºC)</span></p>
+                        <p>${message.data.weather[0].description}</p>
+                        <ul class="weather-misc">
+                        <li><i class="wi wi-humidity"></i> Humidity<span>${humidity}%  </span></li>
+                        <li><i class="wi wi-small-craft-advisory"></i> Wind Speed <span>${windSpeedMPH.toFixed(1)} mph from the ${windDirection}</span></li>
+                        </ul>
+                    </div>
+                    `;
+
+                this.testResults.innerHTML = (weatherDisplay || '').toString();
+                this.weatherContainer.style.display = "block";  
+            }
+
+            // In keeping with researching the API in the coding task
+            // in order to get a human readable wind direction, we will neeed
+            // to convert in that our API returns wind direction in degrees.
+            degreesToCardinalDirection(d) {
+                // keep within the range: 0 <= d < 360
+                d = d % 360;
+
+                if (11.25 <= d && d < 33.75) {
+                    return "NNE";
+                } else if (33.75 <= d && d < 56.25) {
+                    return "NE";
+                } else if (56.25 <= d && d < 78.75) {
+                    return "ENE";
+                } else if (78.75 <= d && d < 101.25) {
+                    return "E";
+                } else if (101.25 <= d && d < 123.75) {
+                    return "ESE";
+                } else if (123.75 <= d && d < 146.25) {
+                    return "SE";
+                } else if (146.25 <= d && d < 168.75) {
+                    return "SSE";
+                } else if (168.75 <= d && d < 191.25) {
+                    return "S";
+                } else if (191.25 <= d && d < 213.75) {
+                    return "SSW";
+                } else if (213.75 <= d && d < 236.25) {
+                    return "SW";
+                } else if (236.25 <= d && d < 258.75) {
+                    return "WSW";
+                } else if (258.75 <= d && d < 281.25) {
+                    return "W";
+                } else if (281.25 <= d && d < 303.75) {
+                    return "WNW";
+                } else if (303.75 <= d && d < 326.25) {
+                    return "NW";
+                } else if (326.25 <= d && d < 348.75) {
+                    return "NNW";
+                } else {
+                    return "N";
+                }
+                }
+            }
+    </script>
+
+    <style>
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            color: #fff;
+            font-size: 1rem;
+            background: #32ccbc;
+            font-family: "roboto", Arial, Helvetica, sans-serif;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        
+        .button-container {
+            text-align: center;
+        }
+
+        .button-container > button {
+            margin: 0;
+            padding: 10px 18px;
+            color: white;
+            background-color: #4a9a8f;
+            border: none;
+            border-radius: 3px;
+            transition: all 200ms ease-in-out;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .button-container > button:hover {
+            background-color: #4ea59a;
+        }
+
+        .button-container > button:active {
+            background-color: #4a9a8f;
+        }
+
+        /* Weather Container CSS definitions */
+        /* We do some nifty styling with our container, color relationships, typography and iconography to 
+            achieve a nice modern balanced look for our weather forecast */
+        .weather-container {
+            margin: auto;
+            margin-top: 40px;
+            width: 650px;
+            display: none;
+            text-align: center;
+            padding: 1px;
+            background: none;
+        }
+
+        .location {
+            color: #30655d;
+        }
+
+        .weather-summary {
+            margin-top: 3rem;
+        }
+
+        .weather-value {
+            font-size: 5rem;
+        }
+
+        .weather-misc {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .weather__miscellaneous li:first-child {
+            margin-right: 2rem;
+        }
+
+        .weather-misc span {
+            color: #132522;
+            margin-left: 1rem;
+            margin-right: 1rem;
+        }
+
+        .weather-icon {
+            font-size: 3rem;
+            margin-right: 1.4rem;
+        }
+
+
+    </style>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <!--<div class="test-results"></div>-->
+
+    <div class="button-container"></div>
+
+     <!-- Brentwood weather container -->
+     <div class="weather-container">
+        <div class="test-results"></div>
+    </div>
+
+    <script>
+        'use strict';
+
+        /**
+         * Creates a button for kicking off the test and adds it to the DOM.
+         *
+         * @param {HTMLElement} context  the parent element to add the button to
+         * @param {Test}        test     the test to be executed
+         * @returns {HTMLElement} the button added to the test
+         */
+        function addButtonForTest(context, test) {
+            let testButton = document.createElement('button');
+
+            testButton.type = 'button';
+            testButton.innerText = 'Get Brentwood Weather';
+            testButton.onclick = () => test.run();
+
+            context.appendChild(testButton);
+
+            return testButton;
+        }
+
+        // Create the Test and add a button to the UI for running the test
+        const test = new Test();
+        const buttonContainer = document.getElementsByClassName('button-container')[0];
+
+        addButtonForTest(buttonContainer, test);
+    </script>
+</body>
+</html>
